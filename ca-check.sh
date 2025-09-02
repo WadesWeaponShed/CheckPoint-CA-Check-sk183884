@@ -31,9 +31,46 @@ if (( ${#other_cas[@]} == 0 )); then
   exit 0
 else
   echo "Detected non-internal Trusted CA object(s):"
-  for ca in "${other_cas[@]}"; do
-    echo "- ${ca}"
-  done
+fi
+
+any_digicert=false
+
+for ca in "${other_cas[@]}"; do
+  echo "- ${ca}"
+
+  # Try to resolve UID from opsec-trusted-cas first
+  uid="$(mgmt_cli -r true show opsec-trusted-cas -f json \
+    | jq -r --arg n "$ca" '.objects[] | select(.name==$n) | .uid' || true)"
+
+  # If not found, try external-trusted-cas (exists on newer versions)
+  if [[ -z "$uid" || "$uid" == "null" ]]; then
+    uid="$(mgmt_cli -r true show external-trusted-cas -f json 2>/dev/null \
+      | jq -r --arg n "$ca" '.objects[]? | select(.name==$n) | .uid' || true)"
+  fi
+
+  dn=""
+  if [[ -n "${uid:-}" && "$uid" != "null" ]]; then
+    dn="$(mgmt_cli -r true show generic-object uid "$uid" -f json | jq -r '.dn // empty' || true)"
+  fi
+
+  if [[ -n "$dn" ]]; then
+    echo "  DN: $dn"
+    if [[ "$dn" == *"DigiCert"* ]]; then
+      any_digicert=true
+      echo "⚠️  Warning: CA '${ca}' has DN containing DigiCert → please review sk183884."
+    fi
+  else
+    echo "  DN: (not available via API)"
+  fi
+done
+
+# New rule: If there are other CAs but none are DigiCert, stop here.
+if [[ "$any_digicert" == "false" ]]; then
+  echo
+  echo "Result: You have non-internal CA object(s), but none contain 'DigiCert' in the DN."
+  echo "No DigiCert indicators found — gateway checks are not required."
+  echo "Check Complete ✅"
+  exit 0
 fi
 
 ############################################
@@ -45,7 +82,7 @@ echo "Section 2: Checking gateways for HTTPS Inspection, Site-to-Site VPN, and M
 # Pull the object list once
 objs_json="$(mgmt_cli -r true show gateways-and-servers details-level "standard" -f json)"
 
-# Iterate relevant object types
+# Iterate relevant object types (CSV to handle names safely)
 printf "%s" "$objs_json" | jq -r '
   .objects[]
   | select(.type=="simple-gateway" or .type=="cluster" or .type=="cluster-member" or .type=="simple-cluster")
@@ -57,9 +94,9 @@ printf "%s" "$objs_json" | jq -r '
 
   # Map API "show" command by object type
   case "$objtype" in
-    simple-gateway)       show_cmd="simple-gateway" ;;
-    simple-cluster|cluster) show_cmd="simple-cluster" ;;
-    cluster-member)       show_cmd="cluster-member" ;;
+    simple-gateway)          show_cmd="simple-gateway" ;;
+    simple-cluster|cluster)  show_cmd="simple-cluster" ;;
+    cluster-member)          show_cmd="cluster-member" ;;
     *) continue ;;
   esac
 
