@@ -16,6 +16,7 @@ This script is designed to help Check Point administrators quickly assess the **
   - Identifies all gateways (simple-gateway, cluster, or cluster-member) with:
     - Site-to-Site VPN enabled
     - Mobile Access enabled
+    - HTTPS Inspection enabled
   - Provides a summary of which blades are active per gateway.
 
 - **Next Steps Guidance**
