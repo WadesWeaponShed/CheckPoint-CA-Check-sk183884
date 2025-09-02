@@ -9,7 +9,11 @@ This script is designed to help Check Point administrators quickly assess the **
 - **Trusted CA Check**
   - Lists all Trusted CA objects in the Security Management Server.
   - Confirms if only the default `internal_ca` is present.
-  - If other CAs exist, they are displayed for review.
+  - If other CAs exist:
+    - Each CA is inspected for its Distinguished Name (DN).
+    - If a DN contains the word **DigiCert**, a warning is displayed and the script proceeds to gateway checks.
+    - If no DN contains **DigiCert**, the script informs you that other CAs exist but none are DigiCert-related, and the check ends successfully without running gateway checks.
+
 
 - **Gateway Blade Check**
   - Runs only if a non-`internal_ca` is detected.
