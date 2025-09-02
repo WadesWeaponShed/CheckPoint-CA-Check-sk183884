@@ -32,4 +32,4 @@ This script is designed to help Check Point administrators quickly assess the **
 1. Clone or download this repository.
 2. Make the script executable:
    ```bash
-   chmod +x cp_ca_vpn_check.sh
+   chmod +x ca-check.sh
