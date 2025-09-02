@@ -57,7 +57,7 @@ for ca in "${other_cas[@]}"; do
     echo "  DN: $dn"
     if [[ "$dn" == *"DigiCert"* ]]; then
       any_digicert=true
-      echo "⚠️  Warning: CA '${ca}' has DN containing DigiCert → please review sk183884."
+      echo "⚠️  Warning: CA '${ca}' has DN containing DigiCert → please review sk183884 to confirm the expiration date."
     fi
   else
     echo "  DN: (not available via API)"
