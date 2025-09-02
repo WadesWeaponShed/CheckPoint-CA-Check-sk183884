@@ -118,5 +118,6 @@ done
 
 echo
 echo "Next steps:"
-echo "• Please review sk183884 to check if the non-internal certificate is a DigiCert CA."
-echo "• If it is, please verify the gateways listed above that are running HTTPS Inspection, Site-to-Site VPN, or Mobile Access."
+echo "• If any non-internal CA was identified as DigiCert, you must follow the remediation steps in sk183884 to correct the issue."
+echo "• If any gateways above show HTTPS Inspection enabled, please also review sk183887 for required actions."
+
