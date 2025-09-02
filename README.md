@@ -25,9 +25,7 @@ This script is designed to help Check Point administrators quickly assess the **
 ## Requirements
 
 - Run directly on the Check Point **Management Server**.
-- The following tools must be available in `PATH`:
-  - `mgmt_cli` (Check Point Management API CLI)
-  - `jq` (command-line JSON processor)
+
 
 ## Usage
 
