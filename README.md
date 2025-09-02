@@ -1,6 +1,6 @@
 Note: This script is a third-party utility, not an official Check Point tool. It is provided as-is for convenience and reporting purposes. Always verify results against official Check Point documentation and support resources before taking action.
 .
-# Check Point Certificate & VPN Blade Check Script
+# Check Point Certificate "DIGICERT" Check Script
 
 This script is designed to help Check Point administrators quickly assess the **Trusted Certificate Authorities (CAs)** configured in their environment and determine whether any gateways are running **Site-to-Site VPN** or **Mobile Access** blades.
 
