@@ -37,35 +37,49 @@ else
 fi
 
 ############################################
-# Section 2 - Gateways with VPN/Mobile Access
+# Section 2 - Gateways
 ############################################
 echo
-echo "Section 2: Checking gateways for Site-to-Site VPN and Mobile Access blade status..."
+echo "Section 2: Checking gateways for HTTPS Inspection, Site-to-Site VPN, and Mobile Access blade status..."
 
-# Collect gateways where either blade is enabled
-gateways_output="$(
-  mgmt_cli -r true show gateways-and-servers details-level "full" -f json \
-  | jq -r '
-    .objects[]
-    | select(.type=="simple-gateway" or .type=="cluster" or .type=="cluster-member")
-    | . as $gw
-    | ( ($gw["network-security-blades"]["site-to-site-vpn"] // false) or ($gw["network-security-blades"]["mobile-access"] // false) ) as $hasAny
-    | select($hasAny)
-    | "- \($gw.name): Site-to-Site VPN=\(($gw["network-security-blades"]["site-to-site-vpn"] // false)), Mobile Access=\(($gw["network-security-blades"]["mobile-access"] // false))"
-  ' || true
-)"
+# Pull the object list once
+objs_json="$(mgmt_cli -r true show gateways-and-servers details-level "standard" -f json)"
 
-if [[ -n "${gateways_output}" ]]; then
-  echo "Gateways with relevant blades enabled:"
-  printf "%s\n" "${gateways_output}"
-  echo
-  echo "Next steps:"
-  echo "• Please review sk183884 to check if the non-internal certificate is a DigiCert CA."
-  echo "• If it is, please verify the gateways listed above that are running Site-to-Site VPN or Mobile Access."
-else
-  echo "No gateways with Site-to-Site VPN or Mobile Access enabled were found."
-  echo
-  echo "Next steps:"
-  echo "• Please review sk183884 to check if the non-internal certificate is a DigiCert CA."
-  echo "• You currently have no gateways with Site-to-Site VPN or Mobile Access enabled to verify."
-fi
+# Iterate relevant object types
+printf "%s" "$objs_json" | jq -r '
+  .objects[]
+  | select(.type=="simple-gateway" or .type=="cluster" or .type=="cluster-member" or .type=="simple-cluster")
+  | [.type, .name] | @csv
+' | while IFS=, read -r objtype name; do
+  # Strip quotes around CSV fields
+  objtype="${objtype//\"/}"
+  name="${name//\"/}"
+
+  # Map API "show" command by object type
+  case "$objtype" in
+    simple-gateway)       show_cmd="simple-gateway" ;;
+    simple-cluster|cluster) show_cmd="simple-cluster" ;;
+    cluster-member)       show_cmd="cluster-member" ;;
+    *) continue ;;
+  esac
+
+  # Fetch full object and print unified one-line summary
+  if out="$(mgmt_cli -r true show "$show_cmd" name "$name" details-level "full" -f json 2>/dev/null)"; then
+    printf "%s" "$out" | jq -r '"\(.name): HTTPS=\(.["enable-https-inspection"] // false), S2S-VPN=\(
+        (.["network-security-blades"]["site-to-site-vpn"]
+         // (if (.vpn|type)=="object" then (.vpn.enabled // false) else (.vpn // false) end)
+        )
+      ), Mobile-Access=\(
+        (.["network-security-blades"]["mobile-access"]
+         // (if (."mobile-access"|type)=="object" then (.["mobile-access"].enabled // false) else (."mobile-access" // false) end)
+        )
+      )"'
+  else
+    echo "$name: (type $objtype) — unable to read details"
+  fi
+done
+
+echo
+echo "Next steps:"
+echo "• Please review sk183884 to check if the non-internal certificate is a DigiCert CA."
+echo "• If it is, please verify the gateways listed above that are running HTTPS Inspection, Site-to-Site VPN, or Mobile Access."
