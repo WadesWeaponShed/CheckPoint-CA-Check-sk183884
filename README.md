@@ -2,6 +2,10 @@ Note: This script is a third-party utility, not an official Check Point tool. It
 .
 # Check Point Certificate "DIGICERT" Check Script
 
+Two versions;
+  - mds_ca_check.sh - Built to go through all domains.
+  - sms_ca_check.sh - Built for SMS
+
 This script is designed to help Check Point administrators quickly assess the **Trusted Certificate Authorities (CAs)** configured in their environment and determine whether any gateways are running **Site-to-Site VPN** or **Mobile Access** blades.
 
 ## Features
@@ -37,4 +41,5 @@ This script is designed to help Check Point administrators quickly assess the **
 1. Clone or download this repository.
 2. Make the script executable:
    ```bash
-   chmod +x ca-check.sh
+   chmod +x script_name.sh
+   ./script_name.sh
